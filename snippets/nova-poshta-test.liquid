@@ -1,0 +1,379 @@
+<link rel="stylesheet" href="{{ 'component-nova-poshta.css' | asset_url }}">
+<script src="{{ 'nova-poshta-test.js' | asset_url }}"></script>
+{% capture quick_city_html %}  
+   <a data-main="Київ" data-present="м. Київ, Київська обл." data-ref="8d5a980d-391c-11dd-90d9-001a92567626" class="quick-city-link" href="javascript:void(0)" style="display:block;order:0;">Київ</a>
+   <a data-main="Львів" data-present="м. Львів, Львівська обл." data-ref="db5c88f5-391c-11dd-90d9-001a92567626" class="quick-city-link" href="javascript:void(0)" style="display:block;order:1;">Львів</a>
+   <a data-main="Одеса" data-present="м. Одеса, Одеська обл." data-ref="db5c88d0-391c-11dd-90d9-001a92567626" class="quick-city-link" href="javascript:void(0)" style="display:block;order:2;">Одеса</a>
+   <a data-main="Харків" data-present="м. Харків, Харківська обл." data-ref="db5c88e0-391c-11dd-90d9-001a92567626" class="quick-city-link" href="javascript:void(0)" style="display:block;order:3;">Харків</a>
+   <a data-main="Дніпро" data-present="м. Дніпро, Дніпропетровська обл." data-ref="db5c88f0-391c-11dd-90d9-001a92567626" class="quick-city-link" href="javascript:void(0)" style="display:block;order:4;">Дніпро</a>
+{% endcapture %}
+{% capture 'nova_poshta_html'%}
+  {% liquid
+    assign delivery_selected = ''
+    if cart.attributes['_delivery_city'] 
+      if cart.attributes['_delivery_warehouse_name'] 
+        assign delivery_selected = cart.attributes['_delivery_city'] | append:', ' |append:cart.attributes['_delivery_warehouse_name'] 
+      endif
+      if cart.attributes['_delivery_courier_street'] 
+        assign delivery_selected = cart.attributes['_delivery_city'] | append:', ' | append:cart.attributes['_delivery_courier_street'] 
+      endif
+    endif    
+  %}
+  <div id="nova-poshta" class="fields-hidden">
+    <div id="deliveryVariants" class="no-js-hidden" data-carturl="{{ routes.cart_url }}" data-variant="branch">
+      <legend class="form__label poshta-open h5" onclick="this.classList.toggle('poshta-open');">{{ 'novaposhta.title' | t }}
+      <span class="selected-delivery" data-delivery="{{ delivery_selected }}" data-city="{{ cart.attributes['_delivery_city'] }}" data-warehouse="{{ cart.attributes['_delivery_warehouse_name'] }}" data-street="{{ cart.attributes['_delivery_courier_street'] }}"></span>
+    </legend>
+
+      <fieldset class="fields-wrap">
+
+        <div class="radio-wrap np-radio-wrap">          
+          <input class="np-fields-check" type="radio" data-type="nova-poshta" name="delivery" value="" id="type-nova-poshta">
+          <label class="np-fields-label" for="type-nova-poshta">{% render "icon-np" %}{{ 'novaposhta.heading' | t }}</label>
+
+          <div class="np-fields-wrap">
+            <div class="radio-wrap">
+              <input type="radio" data-type="branch" name="id" value="" id="type-branch" checked="">
+              <label for="type-branch">{{ 'novaposhta.delivery_types.branch' | t }}</label>
+            </div>
+            <div class="radio-wrap">
+              <input type="radio" data-type="courier" name="id" value="" id="type-courier" {% if cart.attributes['_delivery_type'] == 'courier' %} checked="" {% endif %}>
+              <label for="type-courier">{{ 'novaposhta.delivery_types.courier' | t }}</label>
+            </div>
+          </div>
+          <div class="search-wrap">
+      
+            <!-- Cities -->
+            <div class="quick-city-wrap">{{ quick_city_html }}</div>
+            <div class="city-wrap">  
+              <div class="form-group form-city">
+                <!--datalist id="city-search" value="100"></datalist-->
+                <!--select id="city-search" value="100"></select-->
+                <input  autoComplete="on" 
+                        list="city-search" 
+                        class="form-control input-city"
+                        placeholder="{{ 'novaposhta.search_fields.city' | t }}"
+                        {% if cart.attributes['_delivery_city_Ref'] %} 
+                        data-ref="{{ cart.attributes['_delivery_city_Ref'] }}"
+                        {% else %}
+                        data-ref=""
+                        {% endif %} 
+                        {% if cart.attributes['_delivery_city'] %}
+                        value="{{ cart.attributes['_delivery_city'] }}"
+                        {% else %}
+                        value=""
+                        {% endif %}
+                        data-city=""  
+                /> 
+                <span class="clear {% unless cart.attributes['_delivery_city'] %}d-none{% endunless %}"></span>
+                <div class="input-error"></div>
+              </div>
+              <div id="city_filter" class="dropdown-filter"></div>
+            </div>
+      
+            <!-- Warehouses -->
+            <div class="warehouse-wrap d-none">  
+              <div class="form-group form-warehouse">
+                  <!--select id="warehouse_filter" value="100"></select-->
+                  <input  autoComplete="on" 
+                          list="warehouse-search" 
+                          class="form-control input-warehouse"
+                          placeholder="{{ 'novaposhta.search_fields.branch' | t }}"
+                          data-ref="" 
+                          {% if cart.attributes['_delivery_warehouse'] and cart.attributes['_delivery_city']%}
+                            value="{{cart.attributes['_delivery_warehouse']}}"
+                          {% else %}
+                            value=""
+                          {% endif %}   
+                  /> 
+                  <span class="clear {% unless cart.attributes['_delivery_warehouse'] %}d-none{% endunless %}"></span>
+                  <div class="input-error"></div>
+              </div>
+              <div id="warehouse_filter" class="dropdown-filter"></div>
+            </div>
+      
+            <!-- Addresses -->
+            <div class="address-wrap d-none">  
+              <div class="form-group form-street">
+                <input type="input" 
+                  class="form-control input-street" 
+                  id="address-street" 
+                  data-ref="" 
+                  {% if cart.attributes['_delivery_courier_street'] %}
+                    value="{{cart.attributes['_delivery_courier_street']}}"
+                  {% else %}
+                    value=""
+                  {% endif %}
+                  placeholder="{{ 'novaposhta.search_fields.street' | t }}"
+                  rreadonly
+                  autocomplete="off">
+                <span class="clear {% unless cart.attributes['_delivery_courier_street'] %}d-none{% endunless %}"></span>
+                <div class="input-error"></div>
+              </div>
+              <div id="street_filter" class="dropdown-filter"></div>
+
+              <div class="form-group form-build">
+                <input type="input" 
+                  class="form-control input-build" 
+                  id="address-build" 
+                  data-ref="" 
+                  {% if cart.attributes['_delivery_courier_house'] %}
+                    value="{{cart.attributes['_delivery_courier_house'] | remove: ', '}}"
+                  {% else %}
+                    value=""
+                  {% endif %}
+                  placeholder="{{ 'novaposhta.search_fields.build' | t }}"
+                  readonly
+                  onfocus="this.removeAttribute('readonly')"
+                  autocomplete="off">
+              </div>
+
+              <div class="form-group form-flat">
+                <input type="input" 
+                  class="form-control input-flat" 
+                  id="address-flat" 
+                  data-ref="" 
+                  {% if cart.attributes['_delivery_courier_flat'] %}
+                    value="{{cart.attributes['_delivery_courier_flat'] | remove: ', '}}"
+                  {% else %}
+                    value=""
+                  {% endif %} 
+                  placeholder="{{ 'novaposhta.search_fields.flat' | t }}" 
+                  autocomplete="off"
+                  readonly
+                  onfocus="this.removeAttribute('readonly')">
+              </div>    
+            </div>
+      
+          </div> 
+        </div>
+
+        <div class="radio-wrap other-radio-wrap">
+          <input type="radio" data-type="other" name="delivery" value="" id="type-other">
+          <label for="type-other">{{ 'novaposhta.delivery_types.other' | t }}</label>
+        </div>      
+
+      </fieldset>
+    </div>    
+  </div>
+{% endcapture %} 
+{% capture 'only_nova_poshta_html'%}
+  {% liquid
+    assign delivery_selected = ''
+    if cart.attributes['_delivery_city'] 
+      if cart.attributes['_delivery_warehouse_name'] 
+        assign delivery_selected = cart.attributes['_delivery_city'] | append:', ' |append:cart.attributes['_delivery_warehouse_name'] 
+      endif
+      if cart.attributes['_delivery_courier_street'] 
+        assign delivery_selected = cart.attributes['_delivery_city'] | append:', ' | append:cart.attributes['_delivery_courier_street'] 
+      endif
+    endif    
+  %}
+  <div id="nova-poshta" class="fields-hidden" >
+    <div id="deliveryVariants" class="no-js-hidden" data-carturl="{{ routes.cart_url }}" data-variant="branch">
+      <legend class="form__label" >
+      <span class="selected-delivery" data-delivery="{{ delivery_selected }}" data-city="{{ cart.attributes['_delivery_city'] }}" data-warehouse="{{ cart.attributes['_delivery_warehouse_name'] }}" data-street="{{ cart.attributes['_delivery_courier_street'] }}"></span>
+    </legend>
+      <fieldset class="fields-wrap">
+
+        <div class="radio-wrap np-radio-wrap">          
+          <input class="np-fields-check" type="radio" data-type="nova-poshta" name="delivery" value="" id="type-nova-poshta" checked>
+          <label class="np-fields-label" for="type-nova-poshta">{% render "icon-np" %}{{ 'novaposhta.heading' | t }}</label>
+          <div class="np-fields-wrap">
+            <div class="radio-wrap">
+              <input type="radio" data-type="branch" name="id" value="" id="type-branch" checked="">
+              <label for="type-branch">{{ 'novaposhta.delivery_types.branch' | t }}</label>
+            </div>
+            <div class="radio-wrap">
+              <input type="radio" data-type="courier" name="id" value="" id="type-courier" {% if cart.attributes['_delivery_type'] == 'courier' %} checked="" {% endif %}>
+              <label for="type-courier">{{ 'novaposhta.delivery_types.courier' | t }}</label>
+            </div>
+          </div>
+          <div class="search-wrap">
+      
+            <!-- Cities -->
+            <div class="quick-city-wrap">{{ quick_city_html }}</div>
+            <div class="city-wrap">  
+              <div class="form-group form-city">
+                <datalist id="city-search" value="100"></datalist>
+                <input  autoComplete="on" 
+                        list="city-search" 
+                        class="form-control input-city"
+                        placeholder="{{ 'novaposhta.search_fields.city' | t }}"
+                        {% if cart.attributes['_delivery_city_Ref'] %} 
+                        data-ref="{{ cart.attributes['_delivery_city_Ref'] }}"
+                        {% else %}
+                        data-ref=""
+                        {% endif %} 
+                        {% if cart.attributes['_delivery_city'] %}
+                        value="{{ cart.attributes['_delivery_city'] }}"
+                        {% else %}
+                        value=""
+                        {% endif %}
+                        data-city=""  
+                /> 
+                <span class="clear {% unless cart.attributes['_delivery_city'] %}d-none{% endunless %}"></span>
+                <div class="input-error"></div>
+              </div>
+              <div id="city_filter" class="dropdown-filter"></div>
+            </div>
+      
+            <!-- Warehouses -->
+            <div class="warehouse-wrap">  
+              <div class="form-group form-warehouse">
+                  <datalist id="warehouse-search" value="100"></datalist>
+                  <input  autoComplete="on" 
+                          list="warehouse-search" 
+                          class="form-control input-warehouse"
+                          placeholder="{{ 'novaposhta.search_fields.branch' | t }}"
+                          data-ref="" 
+                          {% if cart.attributes['_delivery_warehouse'] and cart.attributes['_delivery_city']%}
+                            value="{{cart.attributes['_delivery_warehouse']}}"
+                          {% else %}
+                            value=""
+                          {% endif %}   
+                  /> 
+                  <span class="clear {% unless cart.attributes['_delivery_warehouse'] %}d-none{% endunless %}"></span>
+              </div>
+              <!--div id="warehouse_filter" class="dropdown-filter"></div-->
+            </div>
+      
+            <!-- Addresses -->
+            <div class="address-wrap d-none">  
+              <div class="form-group form-street">
+                <input type="input" 
+                  class="form-control input-street" 
+                  id="address-street" 
+                  data-ref="" 
+                  {% if cart.attributes['_delivery_courier_street'] %}
+                    value="{{cart.attributes['_delivery_courier_street']}}"
+                  {% else %}
+                    value=""
+                  {% endif %}
+                  placeholder="{{ 'novaposhta.search_fields.street' | t }}"
+                  rreadonly
+                  autocomplete="off">
+                <span class="clear {% unless cart.attributes['_delivery_courier_street'] %}d-none{% endunless %}"></span>
+                <div class="input-error"></div>
+              </div>
+              <div id="street_filter" class="dropdown-filter"></div>
+
+              <div class="form-group form-build">
+                <input type="input" 
+                  class="form-control input-build" 
+                  id="address-build" 
+                  data-ref="" 
+                  {% if cart.attributes['_delivery_courier_house'] %}
+                    value="{{cart.attributes['_delivery_courier_house'] | remove: ', '}}"
+                  {% else %}
+                    value=""
+                  {% endif %}
+                  placeholder="{{ 'novaposhta.search_fields.build' | t }}"
+                  readonly
+                  onfocus="this.removeAttribute('readonly')"
+                  autocomplete="off">
+              </div>
+
+              <div class="form-group form-flat">
+                <input type="input" 
+                  class="form-control input-flat" 
+                  id="address-flat" 
+                  data-ref="" 
+                  {% if cart.attributes['_delivery_courier_flat'] %}
+                    value="{{cart.attributes['_delivery_courier_flat'] | remove: ', '}}"
+                  {% else %}
+                    value=""
+                  {% endif %} 
+                  placeholder="{{ 'novaposhta.search_fields.flat' | t }}" 
+                  autocomplete="off"
+                  readonly
+                  onfocus="this.removeAttribute('readonly')">
+              </div>    
+            </div>
+      
+          </div> 
+        </div>
+  <style>
+  .np-fields-check {
+    opacity:0;
+    position: absolute!important;
+    z-index: -1;
+  }
+  .form__label.poshta-open {
+    border: none!important;
+  }
+  </style>
+
+      <!--div class="radio-wrap other-radio-wrap">
+        <input type="radio" data-type="other" name="delivery" value="" id="type-other">
+        <label for="type-other">{{ 'novaposhta.delivery_types.other' | t }}</label>
+      </div-->      
+
+      </fieldset>
+    </div>    
+  </div>
+{% endcapture %} 
+{% liquid 
+    assign drawer_type = 'theme'
+    assign drawer_selector = settings.drawer_selector
+    assign drawer_widget_parent_selector = settings.drawer_widget_parent_selector
+    assign drawer_button_selector = settings.drawer_button_selector
+    assign observer_selector = settings.observer_selector
+  if settings.only_np
+    assign html_widget = only_nova_poshta_html
+    assign widget_type = "only"
+  else 
+    assign html_widget = nova_poshta_html
+    assign widget_type = "standart"
+  endif
+%}
+<script>
+window.NP = {
+  NP_API_KEY        : "{{ settings.np_api_key | default: 'b1f5b7037b014d51104c713582797159'}}",
+  widgetHTML        : {{ html_widget | json}},
+  quickCityIndices  : "{{ settings.quick_city_index }}",
+  cartUrl           : "{{ routes.cart_url }}",
+  methodBranch      : "{{ 'novaposhta.delivery_types.branch' | t }}",
+  methodCourier     : "{{ 'novaposhta.delivery_types.courier' | t }}",
+  methodOther       : "{{ 'novaposhta.delivery_types.other' | t }}",
+  titleDelivery     : "{{ 'novaposhta.delivery' | t }}",
+  alertKeyboard     : "{{ 'novaposhta.alert.keyboard' | t }}",
+  alertCity         : "{{ 'novaposhta.alert.city' | t }}",
+  alertWarehouse    : "{{ 'novaposhta.alert.warehouse' | t }}",
+  alertStreet       : "{{ 'novaposhta.alert.street' | t }}",
+  selectorATCbutton : "{{ settings.atc_selector }}",
+  NovaPoshtaLoad    : false,
+  {% if request.page_type != 'cart' %}
+  selectorCartDrawer      : "{{ drawer_selector }}",  
+  selectorParent          : "{{ drawer_widget_parent_selector }}",
+  selectorCheckoutButton  : "{{ drawer_button_selector }}",
+  observerSelector        : "{{ observer_selector }}",          
+  widgetLocation : 'drawer',
+  {% else  %}
+  selectorCartForm        : "{{ settings.cart_form_selector }}",
+  selectorParent          : "{{ settings.cart_widget_parent_selector }}",
+  selectorCheckoutButton  : "{{ settings.cart_button_selector }}",
+  observerSelector        : "{{ settings.observer_selector_cart }}",
+  widgetLocation : 'page',
+  {% endif %}
+  drawerType: "{{ drawer_type }}",
+  widgetType: "{{ widget_type }}"
+}
+console.log(NP.observerSelector)
+const bodyDOM = document.querySelector('body');
+let observerNP = new MutationObserver(mutations => {  
+  for(let mutation of mutations) {
+    for(let node of mutation.addedNodes) {
+      //console.log(node); 
+      if (!(node instanceof HTMLElement)) continue;        
+      if (node.querySelector(NP.observerSelector) ) {  
+        console.log(node);
+        NP.NovaPoshtaLoad = false;
+        nphtml();
+        return
+      }        
+    }
+  }
+});
+observerNP.observe(bodyDOM, {childList: true, subtree: true});
+</script>
